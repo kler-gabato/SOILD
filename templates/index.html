@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoilSense Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            color: #4ade80;
+            margin-bottom: 5px;
+        }
+        header p { color: #94a3b8; }
+        .user-info {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info span {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .account-link {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .account-link:hover {
+            color: #4ade80;
+        }
+        .nav-link {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s;
+        }
+        .nav-link:hover {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 6px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.4);
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+        .status-dot.online { background: #4ade80; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card h3 {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+        
+        /* Soil Sensors */
+        .soil-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .soil-sensor {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+        .soil-sensor .label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+        .soil-sensor .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .soil-sensor .bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .soil-sensor .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Environment */
+        .env-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .env-item {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+        .env-item .icon { font-size: 2rem; margin-bottom: 10px; }
+        .env-item .value { font-size: 1.8rem; font-weight: bold; }
+        .env-item .label { font-size: 0.8rem; color: #94a3b8; margin-top: 5px; }
+        
+        /* Power */
+        .power-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .power-item {
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .power-item .label { font-size: 0.75rem; color: #94a3b8; }
+        .power-item .value { font-size: 1.2rem; font-weight: bold; color: #fbbf24; }
+        
+        .battery-bar {
+            margin-top: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .battery-bar .bar {
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .battery-bar .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #fbbf24, #4ade80);
+            transition: width 0.5s ease;
+        }
+        .battery-bar .info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        
+        /* Pump Control */
+        .pump-status {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .pump-status .icon { font-size: 3rem; margin-bottom: 10px; }
+        .pump-status .status {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .pump-status.on { background: rgba(74, 222, 128, 0.2); }
+        .pump-status.on .status { color: #4ade80; }
+        .pump-status.off .status { color: #94a3b8; }
+        
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .mode-btn.active {
+            background: #3b82f6;
+        }
+        .mode-btn:hover { transform: scale(1.02); }
+        
+        .pump-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .pump-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .pump-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pump-btn.on-btn { background: #4ade80; color: #000; }
+        .pump-btn.off-btn { background: #ef4444; color: #fff; }
+        .pump-btn:not(:disabled):hover { transform: scale(1.02); }
+        
+        /* Soil Status Badge */
+        .soil-status-badge {
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .soil-status-badge.dry { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .soil-status-badge.wet { background: rgba(59, 130, 246, 0.3); color: #93c5fd; }
+        .soil-status-badge.normal { background: rgba(74, 222, 128, 0.3); color: #86efac; }
+        
+        .last-update {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            .soil-grid, .env-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌱 SoilSense</h1>
+            <p>Soil Monitoring and Automated Irrigation System</p>
+            <div class="user-info">
+                <a href="/crops" class="nav-link">🌾 Crop Suggestions</a>
+                <a href="/account" class="account-link">👤 {{ username }}</a>
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+        </header>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot" id="esp32Status"></div>
+                <span id="esp32StatusText">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <span>Mode: </span>
+                <strong id="currentMode">--</strong>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <!-- Soil Moisture -->
+            <div class="card">
+                <h3>🌿 Soil Moisture</h3>
+                <div class="soil-grid">
+                    <div class="soil-sensor" id="soil1">
+                        <div class="label">Sensor 1</div>
+                        <div class="value">--<span style="font-size:0.8rem">%</span></div>
+                        <div class="bar"><div class="bar-fill"></div></div>
+                    </div>
+                    <div class="soil-sensor" id="soil2">
+                        <div class="label">Sensor 2</div>
+                        <div class="value">--<span style="font-size:0.8rem">%</span></div>
+                        <div class="bar"><div class="bar-fill"></div></div>
+                    </div>
+                    <div class="soil-sensor" id="soil3">
+                        <div class="label">Sensor 3</div>
+                        <div class="value">--<span style="font-size:0.8rem">%</span></div>
+                        <div class="bar"><div class="bar-fill"></div></div>
+                    </div>
+                    <div class="soil-sensor" id="soil4">
+                        <div class="label">Sensor 4</div>
+                        <div class="value">--<span style="font-size:0.8rem">%</span></div>
+                        <div class="bar"><div class="bar-fill"></div></div>
+                    </div>
+                </div>
+                <div class="soil-status-badge normal" id="soilStatusBadge">NORMAL</div>
+            </div>
+            
+            <!-- Environment -->
+            <div class="card">
+                <h3>🌡️ Environment</h3>
+                <div class="env-grid">
+                    <div class="env-item">
+                        <div class="icon">🌡️</div>
+                        <div class="value" id="temperature">--</div>
+                        <div class="label">Temperature °C</div>
+                    </div>
+                    <div class="env-item">
+                        <div class="icon">💧</div>
+                        <div class="value" id="humidity">--</div>
+                        <div class="label">Humidity %</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Power Monitor -->
+            <div class="card">
+                <h3>🔋 Power Monitor</h3>
+                <div class="power-stats">
+                    <div class="power-item">
+                        <div class="label">Voltage</div>
+                        <div class="value" id="voltage">--V</div>
+                    </div>
+                    <div class="power-item">
+                        <div class="label">Current</div>
+                        <div class="value" id="current">--A</div>
+                    </div>
+                    <div class="power-item">
+                        <div class="label">Power</div>
+                        <div class="value" id="power">--W</div>
+                    </div>
+                    <div class="power-item">
+                        <div class="label">Shunt</div>
+                        <div class="value" id="shunt">--mV</div>
+                    </div>
+                </div>
+                <div class="battery-bar">
+                    <div class="bar">
+                        <div class="bar-fill" id="batteryFill" style="width: 0%"></div>
+                    </div>
+                    <div class="info">
+                        <span id="batteryPercent">Battery: --%</span>
+                        <span id="batteryVoltage">--V</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pump Control -->
+            <div class="card">
+                <h3>⚙️ Pump Control</h3>
+                <div class="pump-status off" id="pumpStatus">
+                    <div class="icon">💧</div>
+                    <div class="status">PUMP OFF</div>
+                </div>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="autoBtn" onclick="setMode('AUTO')">🔄 AUTO</button>
+                    <button class="mode-btn" id="manualBtn" onclick="setMode('MANUAL')">🎮 MANUAL</button>
+                </div>
+                <div class="pump-controls">
+                    <button class="pump-btn on-btn" id="pumpOnBtn" onclick="setPump('ON')" disabled>PUMP ON</button>
+                    <button class="pump-btn off-btn" id="pumpOffBtn" onclick="setPump('OFF')" disabled>PUMP OFF</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="last-update">Last Update: <span id="lastUpdate">--</span></div>
+    </div>
+
+    <script>
+        let currentMode = 'AUTO';
+        
+        function getSoilColor(percent) {
+            if (percent <= 35) return '#ef4444';  // Dry - Red
+            if (percent >= 50) return '#3b82f6';  // Wet - Blue
+            return '#4ade80';  // Normal - Green
+        }
+        
+        function updateSoilSensor(id, percent) {
+            const sensor = document.getElementById(id);
+            const value = sensor.querySelector('.value');
+            const barFill = sensor.querySelector('.bar-fill');
+            const color = getSoilColor(percent);
+            
+            value.innerHTML = `${percent}<span style="font-size:0.8rem">%</span>`;
+            value.style.color = color;
+            barFill.style.width = `${percent}%`;
+            barFill.style.background = color;
+        }
+        
+        function updateUI(data) {
+            // ESP32 Status
+            const statusDot = document.getElementById('esp32Status');
+            const statusText = document.getElementById('esp32StatusText');
+            if (data.esp32_online) {
+                statusDot.classList.add('online');
+                statusText.textContent = 'ESP32 Online';
+            } else {
+                statusDot.classList.remove('online');
+                statusText.textContent = 'ESP32 Offline';
+            }
+            
+            // Soil Sensors
+            if (data.soil_percent) {
+                updateSoilSensor('soil1', data.soil_percent[0]);
+                updateSoilSensor('soil2', data.soil_percent[1]);
+                updateSoilSensor('soil3', data.soil_percent[2]);
+                updateSoilSensor('soil4', data.soil_percent[3]);
+            }
+            
+            // Soil Status Badge
+            const badge = document.getElementById('soilStatusBadge');
+            badge.textContent = data.soil_status || 'UNKNOWN';
+            badge.className = 'soil-status-badge ' + (data.soil_status || 'normal').toLowerCase();
+            
+            // Environment
+            document.getElementById('temperature').textContent = data.temperature ?? '--';
+            document.getElementById('humidity').textContent = data.humidity ?? '--';
+            
+            // Power
+            const power = data.power || {};
+            document.getElementById('voltage').textContent = (power.bus_voltage ?? '--') + 'V';
+            document.getElementById('current').textContent = (power.current ?? '--') + 'A';
+            document.getElementById('power').textContent = (power.power ?? '--') + 'W';
+            document.getElementById('shunt').textContent = (power.shunt_voltage ?? '--') + 'mV';
+            
+            // Battery
+            const batteryPercent = data.battery_percent || 0;
+            document.getElementById('batteryFill').style.width = `${batteryPercent}%`;
+            document.getElementById('batteryPercent').textContent = `Battery: ${batteryPercent}%`;
+            document.getElementById('batteryVoltage').textContent = (data.battery_voltage ?? '--') + 'V';
+            
+            // Mode
+            currentMode = data.mode || 'AUTO';
+            document.getElementById('currentMode').textContent = currentMode;
+            document.getElementById('autoBtn').classList.toggle('active', currentMode === 'AUTO');
+            document.getElementById('manualBtn').classList.toggle('active', currentMode === 'MANUAL');
+            
+            // Pump Controls
+            const isManual = currentMode === 'MANUAL';
+            document.getElementById('pumpOnBtn').disabled = !isManual;
+            document.getElementById('pumpOffBtn').disabled = !isManual;
+            
+            // Pump Status
+            const pumpStatus = document.getElementById('pumpStatus');
+            const isOn = data.pump_status === 'ON';
+            pumpStatus.className = 'pump-status ' + (isOn ? 'on' : 'off');
+            pumpStatus.querySelector('.status').textContent = 'PUMP ' + data.pump_status;
+            
+            // Last Update
+            document.getElementById('lastUpdate').textContent = data.last_update || new Date().toLocaleString();
+        }
+        
+        let saveCounter = 0;
+        
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                updateUI(data);
+                
+                // Save to history every 5 minutes (150 fetches at 2 sec interval)
+                saveCounter++;
+                if (saveCounter >= 150 && data.esp32_online) {
+                    saveCounter = 0;
+                    saveReading(data);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        }
+        
+        async function saveReading(data) {
+            try {
+                const soilPercent = data.soil_percent || [0, 0, 0, 0];
+                const avgSoil = soilPercent.reduce((a, b) => a + b, 0) / soilPercent.length;
+                
+                await fetch('/api/save_reading', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        soil_avg: avgSoil,
+                        soil1: soilPercent[0],
+                        soil2: soilPercent[1],
+                        soil3: soilPercent[2],
+                        soil4: soilPercent[3],
+                        temperature: data.temperature,
+                        humidity: data.humidity
+                    })
+                });
+                console.log('📊 Sensor reading saved to history');
+            } catch (error) {
+                console.error('Save reading error:', error);
+            }
+        }
+        
+        async function setMode(mode) {
+            try {
+                await fetch(`/api/mode/${mode}`);
+                fetchData();
+            } catch (error) {
+                console.error('Mode change error:', error);
+            }
+        }
+        
+        async function setPump(state) {
+            try {
+                await fetch(`/api/pump/${state}`);
+                fetchData();
+            } catch (error) {
+                console.error('Pump control error:', error);
+            }
+        }
+        
+        // Initial fetch and auto-refresh every 2 seconds
+        fetchData();
+        setInterval(fetchData, 2000);
+    </script>
+</body>
+</html>

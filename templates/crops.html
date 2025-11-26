@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Suggestions - SoilSense</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { font-size: 2rem; color: #4ade80; margin-bottom: 5px; }
+        header p { color: #94a3b8; }
+        
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-links a.active { background: #4ade80; color: #000; }
+        
+        .season-card {
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .season-card.wet {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(59, 130, 246, 0.2));
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+        .season-card.dry {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(251, 191, 36, 0.2));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .season-icon { font-size: 4rem; margin-bottom: 15px; }
+        .season-title { font-size: 1.8rem; font-weight: bold; margin-bottom: 8px; }
+        .season-months { color: #94a3b8; font-size: 1rem; margin-bottom: 10px; }
+        .season-desc { color: #cbd5e1; font-size: 0.95rem; }
+        
+        .soil-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .soil-card h3 { color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px; }
+        .soil-value { font-size: 3rem; font-weight: bold; color: #4ade80; }
+        .soil-label { color: #94a3b8; font-size: 0.9rem; }
+        
+        .suggestions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .suggestions-header h2 { color: #fff; font-size: 1.3rem; }
+        .refresh-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .refresh-btn:hover { background: rgba(255,255,255,0.2); }
+        
+        /* Slider Container */
+        .slider-container {
+            position: relative;
+            overflow: hidden;
+            padding: 10px 0;
+        }
+        .slider-wrapper {
+            display: flex;
+            transition: transform 0.4s ease;
+        }
+        .slide {
+            min-width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        
+        .slider-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .slider-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slider-btn:hover { background: #4ade80; color: #000; }
+        .slider-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .slider-btn:disabled:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        
+        .slider-dots {
+            display: flex;
+            gap: 8px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dot.active { background: #4ade80; transform: scale(1.2); }
+        .dot:hover { background: rgba(255,255,255,0.4); }
+        
+        .slide-counter {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        .crop-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .crop-header { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+        .crop-icon {
+            font-size: 3.5rem;
+            background: rgba(0,0,0,0.3);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+        }
+        .crop-info h3 { color: #fff; font-size: 1.4rem; margin-bottom: 5px; }
+        .crop-info .local-name { color: #94a3b8; font-size: 1rem; font-style: italic; margin-bottom: 8px; }
+        .crop-score { display: flex; align-items: center; gap: 10px; }
+        .score-bar { width: 100px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+        .score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .score-fill.high { background: #4ade80; }
+        .score-fill.medium { background: #fbbf24; }
+        .score-fill.low { background: #f87171; }
+        .score-text { font-size: 0.9rem; color: #94a3b8; }
+        
+        .crop-season-tag { display: inline-block; padding: 6px 14px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 15px; }
+        .crop-season-tag.wet { background: rgba(14, 165, 233, 0.3); color: #7dd3fc; }
+        .crop-season-tag.dry { background: rgba(245, 158, 11, 0.3); color: #fcd34d; }
+        .crop-season-tag.both { background: rgba(139, 92, 246, 0.3); color: #c4b5fd; }
+        
+        .crop-description { color: #e2e8f0; font-size: 1rem; margin-bottom: 15px; line-height: 1.6; }
+        
+        .crop-tips {
+            background: rgba(74, 222, 128, 0.1);
+            border-left: 4px solid #4ade80;
+            padding: 15px;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 20px;
+        }
+        .crop-tips .tip-label { color: #4ade80; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; }
+        .crop-tips .tip-text { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; }
+        
+        .crop-soil {
+            background: rgba(0,0,0,0.2);
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .crop-soil .label { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; }
+        .crop-soil .value { font-size: 1.2rem; color: #4ade80; font-weight: 600; }
+        
+        .crop-reasons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .reason-tag { background: rgba(74, 222, 128, 0.2); color: #86efac; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; }
+        
+        .slide-counter {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .no-suggestions { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .no-suggestions .icon { font-size: 4rem; margin-bottom: 20px; }
+        .no-suggestions h3 { color: #fff; margin-bottom: 10px; }
+        
+        .loading { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .loading .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .info-note {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌱 SoilSense</h1>
+            <p>🇵🇭 Philippine Crop Suggestions</p>
+        </header>
+        
+        <nav class="nav-links">
+            <a href="/">🏠 Dashboard</a>
+            <a href="/crops" class="active">🌾 Crop Suggestions</a>
+            <a href="/account">👤 Account</a>
+            <a href="/logout">🚪 Logout</a>
+        </nav>
+        
+        <!-- Current Season -->
+        <div class="season-card dry" id="seasonCard">
+            <div class="season-icon" id="seasonIcon">☀️</div>
+            <div class="season-title" id="seasonTitle">Loading...</div>
+            <div class="season-months" id="seasonMonths">--</div>
+            <div class="season-desc" id="seasonDesc">--</div>
+        </div>
+        
+        <!-- Soil Moisture -->
+        <div class="soil-card">
+            <h3>💧 Your Average Soil Moisture</h3>
+            <div class="soil-value"><span id="soilValue">--</span>%</div>
+            <div class="soil-label">Based on sensor history</div>
+        </div>
+        
+        <!-- Crop Suggestions Slider -->
+        <div class="suggestions-header">
+            <h2>🌾 Recommended Crops</h2>
+            <button class="refresh-btn" onclick="loadSuggestions()">🔄 Refresh</button>
+        </div>
+        
+        <div id="cropsContainer" class="loading">
+            <div class="spinner"></div>
+            <p>Loading crop suggestions...</p>
+        </div>
+        
+        <div class="info-note">
+            💡 Crops are recommended based on Philippine season (Dry: Nov-May, Wet: Jun-Oct) and your soil moisture data.
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        let totalSlides = 0;
+        let cropsData = [];
+        
+        async function loadSuggestions() {
+            const container = document.getElementById('cropsContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+            
+            try {
+                const response = await fetch('/api/crop_suggestions');
+                const data = await response.json();
+                
+                // Update season card
+                const seasonCard = document.getElementById('seasonCard');
+                const season = data.season || {};
+                const isWet = season.season_type === 'wet';
+                
+                seasonCard.className = 'season-card ' + (isWet ? 'wet' : 'dry');
+                document.getElementById('seasonIcon').textContent = season.icon || (isWet ? '🌧️' : '☀️');
+                document.getElementById('seasonTitle').textContent = season.season || 'Unknown';
+                document.getElementById('seasonMonths').textContent = season.months || '--';
+                document.getElementById('seasonDesc').textContent = season.description || '--';
+                
+                // Update soil moisture
+                document.getElementById('soilValue').textContent = data.soil_moisture ?? '--';
+                
+                // Store crops data and render slider
+                cropsData = data.suggestions || [];
+                totalSlides = cropsData.length;
+                currentSlide = 0;
+                
+                if (totalSlides > 0) {
+                    renderSlider();
+                } else {
+                    container.innerHTML = `
+                        <div class="no-suggestions">
+                            <div class="icon">🌱</div>
+                            <h3>No Suggestions Yet</h3>
+                            <p>Keep your sensors running to collect data!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                container.innerHTML = `
+                    <div class="no-suggestions">
+                        <div class="icon">⚠️</div>
+                        <h3>Error Loading Data</h3>
+                        <p>Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderSlider() {
+            const container = document.getElementById('cropsContainer');
+            
+            let slidesHTML = cropsData.map((crop, index) => `
+                <div class="slide">${renderCropCard(crop)}</div>
+            `).join('');
+            
+            let dotsHTML = cropsData.map((_, index) => `
+                <div class="dot ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></div>
+            `).join('');
+            
+            container.innerHTML = `
+                <div class="slider-container">
+                    <div class="slider-wrapper" id="sliderWrapper">
+                        ${slidesHTML}
+                    </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="slider-btn" id="prevBtn" onclick="prevSlide()">◀</button>
+                    <div class="slider-dots" id="sliderDots">
+                        ${dotsHTML}
+                    </div>
+                    <button class="slider-btn" id="nextBtn" onclick="nextSlide()">▶</button>
+                </div>
+                <div class="slide-counter">
+                    <span id="currentSlideNum">1</span> / <span id="totalSlideNum">${totalSlides}</span>
+                </div>
+            `;
+            
+            updateSlider();
+        }
+        
+        function updateSlider() {
+            const wrapper = document.getElementById('sliderWrapper');
+            if (wrapper) {
+                wrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+            
+            // Update dots
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+            
+            // Update counter
+            const counterEl = document.getElementById('currentSlideNum');
+            if (counterEl) {
+                counterEl.textContent = currentSlide + 1;
+            }
+            
+            // Update buttons
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            if (prevBtn) prevBtn.disabled = currentSlide === 0;
+            if (nextBtn) nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+        
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlider();
+            }
+        }
+        
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlider();
+            }
+        }
+        
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlider();
+        }
+        
+        function renderCropCard(crop) {
+            const scoreClass = crop.score >= 70 ? 'high' : crop.score >= 50 ? 'medium' : 'low';
+            const seasonLabel = {
+                'wet': '🌧️ Wet Season',
+                'dry': '☀️ Dry Season',
+                'both': '🔄 Year-round'
+            }[crop.season_type] || 'Year-round';
+            
+            return `
+                <div class="crop-card">
+                    <div class="crop-header">
+                        <div class="crop-icon">${crop.icon}</div>
+                        <div class="crop-info">
+                            <h3>${crop.name}</h3>
+                            <div class="local-name">${crop.local_name}</div>
+                            <div class="crop-score">
+                                <div class="score-bar">
+                                    <div class="score-fill ${scoreClass}" style="width: ${crop.score}%"></div>
+                                </div>
+                                <span class="score-text">${crop.score}% match</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="crop-season-tag ${crop.season_type}">${seasonLabel}</span>
+                    <p class="crop-description">${crop.description}</p>
+                    <div class="crop-tips">
+                        <div class="tip-label">💡 TIPS</div>
+                        <div class="tip-text">${crop.tips}</div>
+                    </div>
+                    <div class="crop-soil">
+                        <div class="label">💧 Ideal Soil Moisture</div>
+                        <div class="value">${crop.ideal_soil}</div>
+                    </div>
+                    <div class="crop-reasons">
+                        ${crop.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+        
+        loadSuggestions();
+    </script>
+</body>
+</html>
