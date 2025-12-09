@@ -146,10 +146,9 @@
             </div>
 
             <div class="form-group">
-                <label>Registration Token</label>
-                <input type="text" name="token_display" value="123456789" readonly>
-                <input type="hidden" name="token" value="123456789">
-                <div class="readonly-note">This token is required for registration and is prefilled.</div>
+                <label>Registration Token (secret)</label>
+                <input type="password" name="token" placeholder="Enter registration token" required>
+                <div class="readonly-note">This token is a secret required for registration. It will not be shown again.</div>
             </div>
 
             <button type="submit" class="btn">Register</button>
