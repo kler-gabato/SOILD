@@ -283,9 +283,56 @@
             margin-top: 20px;
         }
         
+        /* History modal styles */
+        .history-filter-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #94a3b8;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .history-filter-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .history-filter-btn.active {
+            background: #4ade80;
+            color: #000;
+            border-color: #4ade80;
+        }
+        #historyModal table tbody tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        #historyModal table tbody tr td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        #historyModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        #historyModal .modal-card {
+            background: rgba(26,26,46,0.95);
+            max-width: 1000px;
+            margin: 20px auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 30px;
+            color: #fff;
+        }
         @media (max-width: 600px) {
             header h1 { font-size: 1.8rem; }
             .soil-grid, .env-grid { grid-template-columns: 1fr; }
+            #historyModal .modal-card { margin: 10px; padding: 18px; }
+            #historyModal table thead th { font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -296,6 +343,7 @@
             <p>Soil Monitoring and Automated Irrigation System</p>
             <div class="user-info">
                 <a href="/crops" class="nav-link">🌾 Crop Suggestions</a>
+                <a href="#" class="nav-link" id="historyLink" onclick="openHistoryModal(); return false;">📊 History</a>
                 <a href="/account" class="account-link">👤 {{ username }}</a>
                 <a href="/logout" class="logout-btn">Logout</a>
             </div>
@@ -408,6 +456,58 @@
             </div>
         </div>
         
+        <!-- History Modal -->
+        <div id="historyModal" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 id="historyTitle" style="color:#4ade80; font-size:1.6rem; margin:0;">📊 Sensor History</h2>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="filterHistoryByRange('24h', this)" class="history-filter-btn active">Last 24h</button>
+                            <button onclick="filterHistoryByRange('7d', this)" class="history-filter-btn">Last 7d</button>
+                            <button onclick="filterHistoryByRange('30d', this)" class="history-filter-btn">Last 30d</button>
+                            <button onclick="filterHistoryByRange('all', this)" class="history-filter-btn">All</button>
+                        </div>
+                        <button onclick="closeHistoryModal()" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer;">✕</button>
+                    </div>
+                </div>
+                
+                <div id="historyTable" style="overflow-x:auto; background:rgba(0,0,0,0.3); border-radius:12px; padding:0;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                        <thead>
+                            <tr style="background:rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.08);">
+                                <th style="padding:12px; text-align:left; color:#94a3b8;">Timestamp</th>
+                                <th style="padding:12px; text-align:center; color:#94a3b8;">Soil Avg</th>
+                                <th style="padding:12px; text-align:center; color:#94a3b8;">Temp</th>
+                                <th style="padding:12px; text-align:center; color:#94a3b8;">Humidity</th>
+                                <th style="padding:12px; text-align:center; color:#94a3b8;">Battery</th>
+                                <th style="padding:12px; text-align:center; color:#94a3b8;">Pump</th>
+                                <th style="padding:12px; text-align:center; color:#94a3b8;">Mode</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+                    <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
+                        <div style="color:#94a3b8; font-size:0.85rem; margin-bottom:6px;">Avg Soil Moisture</div>
+                        <div style="font-size:1.4rem; font-weight:bold; color:#4ade80;" id="statsAvgSoil">--</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
+                        <div style="color:#94a3b8; font-size:0.85rem; margin-bottom:6px;">Avg Temperature</div>
+                        <div style="font-size:1.4rem; font-weight:bold; color:#fbbf24;" id="statsAvgTemp">--</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
+                        <div style="color:#94a3b8; font-size:0.85rem; margin-bottom:6px;">Readings Count</div>
+                        <div style="font-size:1.4rem; font-weight:bold; color:#3b82f6;" id="statsCount">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="last-update">Last Update: <span id="lastUpdate">--</span></div>
     </div>
 
@@ -489,7 +589,7 @@
             const pumpStatus = document.getElementById('pumpStatus');
             const isOn = data.pump_status === 'ON';
             pumpStatus.className = 'pump-status ' + (isOn ? 'on' : 'off');
-            pumpStatus.querySelector('.status').textContent = 'PUMP ' + data.pump_status;
+            pumpStatus.querySelector('.status').textContent = 'PUMP ' + (data.pump_status || '--');
             
             // Last Update
             document.getElementById('lastUpdate').textContent = data.last_update || new Date().toLocaleString();
@@ -559,6 +659,134 @@
         // Initial fetch and auto-refresh every 2 seconds
         fetchData();
         setInterval(fetchData, 2000);
+
+        // -------------------------------
+        // History modal functionality
+        // -------------------------------
+        let allHistoryData = [];
+        let currentHistoryFilter = '24h';
+
+        function openHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            modal.style.display = 'block';
+            modal.setAttribute('aria-hidden', 'false');
+            loadHistory();
+        }
+
+        function closeHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/history');
+                if (!response.ok) throw new Error('Network response was not ok');
+                allHistoryData = await response.json();
+                filterHistoryByRange(currentHistoryFilter, document.querySelector('.history-filter-btn.active') || null);
+            } catch (error) {
+                console.error('History load error:', error);
+                const tbody = document.getElementById('historyBody');
+                tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#ef4444;">Failed to load history</td></tr>';
+                updateHistoryStats([]);
+            }
+        }
+
+        function filterHistoryByRange(range, btn) {
+            currentHistoryFilter = range;
+            const buttons = document.querySelectorAll('.history-filter-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            if (btn && btn.classList) btn.classList.add('active');
+
+            let filtered = allHistoryData.slice();
+            const now = new Date();
+
+            if (range !== 'all') {
+                let cutoffTime = new Date(now);
+                if (range === '24h') cutoffTime.setHours(cutoffTime.getHours() - 24);
+                else if (range === '7d') cutoffTime.setDate(cutoffTime.getDate() - 7);
+                else if (range === '30d') cutoffTime.setDate(cutoffTime.getDate() - 30);
+
+                filtered = filtered.filter(record => {
+                    const recordTime = new Date(record.recorded_at);
+                    return recordTime >= cutoffTime;
+                });
+            }
+
+            displayHistory(filtered);
+            updateHistoryStats(filtered);
+        }
+
+        function displayHistory(data) {
+            const tbody = document.getElementById('historyBody');
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;">No data available</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(record => {
+                const ts = record.recorded_at ? new Date(record.recorded_at).toLocaleString() : '--';
+                const soilAvg = (record.soil_avg !== null && record.soil_avg !== undefined) ? (Number(record.soil_avg).toFixed(1) + '%') : '--';
+                const temp = (record.temperature !== null && record.temperature !== undefined) ? (record.temperature + '°C') : '--';
+                const hum = (record.humidity !== null && record.humidity !== undefined) ? (record.humidity + '%') : '--';
+                const batt = (record.battery_percent !== null && record.battery_percent !== undefined) ? (Number(record.battery_percent).toFixed(1) + '%') : '--';
+                const pump = record.pump_status || '--';
+                const mode = record.mode || '--';
+                const pumpColor = pump === 'ON' ? '#4ade80' : '#94a3b8';
+                return `
+                    <tr>
+                        <td style="color:#94a3b8;">${ts}</td>
+                        <td style="text-align:center; color:#4ade80; font-weight:bold;">${soilAvg}</td>
+                        <td style="text-align:center; color:#fbbf24;">${temp}</td>
+                        <td style="text-align:center; color:#93c5fd;">${hum}</td>
+                        <td style="text-align:center; color:#fbbf24;">${batt}</td>
+                        <td style="text-align:center; color:${pumpColor}; font-weight:bold;">${pump}</td>
+                        <td style="text-align:center; color:#3b82f6;">${mode}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateHistoryStats(data) {
+            const avgSoilEl = document.getElementById('statsAvgSoil');
+            const avgTempEl = document.getElementById('statsAvgTemp');
+            const countEl = document.getElementById('statsCount');
+
+            if (!data || data.length === 0) {
+                avgSoilEl.textContent = '--';
+                avgTempEl.textContent = '--';
+                countEl.textContent = '0';
+                return;
+            }
+
+            const validSoils = data.map(r => Number(r.soil_avg || 0));
+            const validTemps = data.map(r => Number(r.temperature || 0));
+            const avgSoil = validSoils.reduce((s, v) => s + v, 0) / validSoils.length;
+            const avgTemp = validTemps.reduce((s, v) => s + v, 0) / validTemps.length;
+
+            avgSoilEl.textContent = isFinite(avgSoil) ? avgSoil.toFixed(1) + '%' : '--';
+            avgTempEl.textContent = isFinite(avgTemp) ? avgTemp.toFixed(1) + '°C' : '--';
+            countEl.textContent = data.length.toString();
+        }
+
+        // Close modal when clicking outside the modal card
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('historyModal');
+            if (!modal) return;
+            if (modal.style.display === 'block') {
+                const modalCard = modal.querySelector('.modal-card');
+                if (event.target === modal) {
+                    closeHistoryModal();
+                } else if (modalCard && !modalCard.contains(event.target) && event.target.id !== 'historyLink') {
+                    // Clicking outside modal-card closes modal
+                    // (keeps clicks on inner elements active)
+                    // Only close if click is on overlay
+                    // We already handle direct overlay click above; this is a safe guard
+                }
+            }
+        });
     </script>
 </body>
 </html>

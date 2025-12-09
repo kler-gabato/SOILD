@@ -108,6 +108,11 @@
             color: #64748b;
             margin-top: 5px;
         }
+        .readonly-note {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 6px;
+        }
     </style>
 </head>
 <body>
@@ -139,6 +144,14 @@
                 <label>Confirm Password</label>
                 <input type="password" name="confirm_password" placeholder="Confirm your password" required>
             </div>
+
+            <div class="form-group">
+                <label>Registration Token</label>
+                <input type="text" name="token_display" value="123456789" readonly>
+                <input type="hidden" name="token" value="123456789">
+                <div class="readonly-note">This token is required for registration and is prefilled.</div>
+            </div>
+
             <button type="submit" class="btn">Register</button>
         </form>
         

@@ -122,6 +122,17 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         executed INTEGER DEFAULT 0
     )''')
+
+    # Ensure users table has a 'token' column; add if missing
+    c.execute("PRAGMA table_info(users)")
+    cols = [row[1] for row in c.fetchall()]  # row[1] is column name
+    if 'token' not in cols:
+        try:
+            c.execute("ALTER TABLE users ADD COLUMN token TEXT")
+            print("✅ Added 'token' column to users table")
+        except Exception as e:
+            print(f"⚠️ Could not add token column: {e}")
+
     c.execute('INSERT OR IGNORE INTO sensor_current (id, esp32_online) VALUES (1, 0)')
     conn.commit()
     conn.close()
@@ -403,6 +414,7 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
+        token = request.form.get('token', '123456789')  # default token if not supplied
         
         if password != confirm_password:
             return render_template('register.html', error='Passwords do not match')
@@ -410,10 +422,10 @@ def register():
             return render_template('register.html', error='Password must be at least 6 characters')
         
         try:
-            # Store in SQLite
+            # Store in SQLite (ensure token column exists)
             conn = get_db()
-            conn.execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-                        (username, email, hash_password(password)))
+            conn.execute('INSERT INTO users (username, email, password, token) VALUES (?, ?, ?, ?)',
+                        (username, email, hash_password(password), token))
             conn.commit()
             conn.close()
             
@@ -423,6 +435,7 @@ def register():
                     users_ref.child(username).set({
                         'username': username,
                         'email': email,
+                        'token': token,
                         'created_at': datetime.now().isoformat()
                     })
                     print(f"✅ User {username} also saved to Firebase")
